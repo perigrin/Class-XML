@@ -9,4 +9,5 @@ Module::Build->new(
     'Class::Accessor' => '0.19',
     'Class::Data::Inheritable' => '0.02',
   },
+  create_makefile_pl => 'passthrough',
 )->create_build_script;
