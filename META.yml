@@ -1,0 +1,15 @@
+--- #YAML:1.0
+name: Class-XML
+version: 0.01
+author:
+  - Matt S Trout <mstrout@cpan.org>
+abstract: Simple XML Abstraction
+license: perl
+requires:
+  Test::More: 0.0
+  XML::XPath: 1.0
+provides:
+  Class::XML:
+    file: lib/Class/XML.pm
+    version: 0.01
+generated_by: Module::Build version 0.25

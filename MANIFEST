@@ -1,0 +1,14 @@
+ARTISTIC
+Build.PL
+GPL
+lib/Class/XML.pm
+MANIFEST			This list of files
+META.yml
+MyTest/HasAttrs.pm
+MyTest/New.pm
+MyTest/SingleChild.pm
+MyTest/TopNode.pm
+README
+t/00attr.t
+t/01child.t
+t/02new.t
