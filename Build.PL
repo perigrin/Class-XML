@@ -4,7 +4,7 @@ Module::Build->new(
   license => 'perl',
   requires => {
     'Test::More' => '0.0',
-    'XML::XPath' => '1.0',
+    'XML::XPath' => '1.13',
     'Carp'       => '0.0',
     'Class::Accessor' => '0.19',
     'Class::Data::Inheritable' => '0.02',

@@ -5,7 +5,7 @@ use Test::More;
 use MyTest::TopNode;
 
 use strict;
-plan tests => 12;
+plan tests => 13;
 
 # Tests here
 
@@ -52,8 +52,12 @@ is ("${new_child}", qq!<bar counter="formica" />!, "New child created correctly"
 
 $tree->bar($new_child);
 
-is ("${tree}", qq!<foo><bar counter="formica" /></foo>!, "New child added correctly");
+is ("${tree}", qq!<foo><bar counter="formica" /></foo>!, "New child added correctly as replacement");
 
 $tree->bar( undef );
 
 is ("${tree}", qq!<foo />!, "Child deleted correctly");
+
+$tree->bar($new_child);
+
+is ("${tree}", qq!<foo><bar counter="formica" /></foo>!, "New child added correctly as new");

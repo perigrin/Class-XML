@@ -1,6 +1,6 @@
 package Class::XML;
 
-$VERSION = "0.05";
+$VERSION = "0.06";
 
 use strict;
 use warnings;
@@ -120,7 +120,7 @@ sub _add_has {
 sub _get_parent {
   my ($self, $key, $class) = @_;
   my $node = $self->getParentNode;
-  return cast($class, \$node);
+  return cast($class, $node);
 }
 
 sub _get_child {
@@ -138,15 +138,21 @@ sub _set_child {
   $self->_croak("Incorrect node name ".$new->getName." (expected $key)")
     unless ($new->getName eq $key);
   my $old = $self->_get_child($key, $class);
-  $self->_replace_child_node($old => $new);
+  if ($old) {
+    $self->_replace_child_node($old => $new);
+  } else {
+    $self->appendChild($new);
+  }
 }
 
 sub _replace_child_node { # Should be replaceChild in XML::XPath really
   my ($self, $old, $new) = @_;
-  my $pos = $old->get_pos;
-  $new->set_pos($pos);
-  ${$self}->[node_children]->[$pos] = $new;
-  $old->del_parent_link;
+  $self->insertAfter($new, $old) if $new;
+  $self->removeChild($old);
+  #my $pos = $old->get_pos;
+  #$new->set_pos($pos);
+  #${$self}->[node_children]->[$pos] = $new;
+  #$old->del_parent_link;
 }
 
 sub _get_children {
@@ -288,21 +294,9 @@ sub _do_action {
   }
 }
 
-sub cast {
-  my ($to, $obj) = @_;
-  warn "Casting $obj (".(ref $obj).") to ".(ref $to || $to) if DEBUG;
-  return $obj unless ref $obj;
-  return $obj if (eval { $obj->isa(ref $to || $to) });
-  unless (ref $to) {
-    eval "use ${to};";
-    Carp::croak $@ if $@;
-  }
-  return bless($obj, ref $to || $to);
-}
-
 sub search_children {
   my ($self) = @_;
-  my $xpath = $self->_gen_search_expr('/', @_[1..$#_]);
+  my $xpath = $self->_gen_search_expr('./child::', @_[1..$#_]);
   my @results = $self->findnodes($xpath);
   NODE: foreach my $node (@results) {
     next NODE unless $node->isElementNode;
@@ -343,6 +337,28 @@ sub _gen_search_expr {
   }
   return $xpath;
 }
+
+sub cast {
+  my ($to, $obj) = @_;
+  warn "Casting $obj (".(ref $obj).") to ".(ref $to || $to) if DEBUG;
+  return $obj unless ref $obj;
+  return $obj if (eval { $obj->isa(ref $to || $to) });
+  unless (ref $to) {
+    eval "use ${to};";
+    Carp::croak $@ if $@;
+  }
+  if ($obj->isa('XML::XPath::NodeImpl')) {
+    my $dummy = bless(\$obj, 'Class::XML::DummyLayer');
+    return bless(\$dummy, ref $to || $to);
+  }
+  return bless($obj, ref $to || $to);
+}
+
+package Class::XML::DummyLayer;
+
+use base qw/XML::XPath::Node::Element/;
+
+sub DESTROY { }; # This should stop things getting GC'ed unexpectedly
 
 =head1 NAME
 
