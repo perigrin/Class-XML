@@ -1,6 +1,6 @@
 package Class::XML;
 
-$VERSION = "0.03";
+$VERSION = "0.04";
 
 use strict;
 use warnings;
@@ -52,8 +52,9 @@ __PACKAGE__->_add_hash_plural('_add_group_type');
 
 sub has_attributes {
   my ($package) = @_;
-  $package->mk_accessors(@_[1..$#_]);
-  @{$package->__attribute}{ @_[1..$#_] } = undef;
+  foreach (@_[1..$#_]) {
+    $package->has_attribute($_);
+  }
 }
 
 __PACKAGE__->_add_group_types(
@@ -79,7 +80,7 @@ __PACKAGE__->_add_group_types(
     },
   'relation' => {
     'get' => '_get_relation',
-    'set' => '_croak_ro',
+    'set' => '_get_relation',
     'delete' => '_croak_ro',
     },
   );
@@ -111,7 +112,8 @@ sub _add_has {
     sub {
       my ($package, $name, $class) = @_;
       $package->mk_accessors($name);
-      $package->$classdata()->{$name} = $class;
+      my @attrs = %{$package->$classdata()};
+      $package->$classdata({ @attrs, $name, $class });
     };
 }
 
@@ -184,8 +186,10 @@ sub _delete_child {
 }
 
 sub _get_relation {
-  my ($self, $key, $spec) = @_;
+  my ($self, $key, $spec, @args) = @_;
   my ($path, $class) = @$spec;
+  $path = sprintf($path, @args);
+  warn "$path -> $class" if DEBUG;
   return map { cast($class, $_); } ($self->findnodes($path));
 }
 
@@ -267,7 +271,6 @@ sub set {
   my ($self, @data) = @_;
   my $action = ((defined $data[1]) ? 'set' : 'delete');
   $self->_do_action($action, @data);
-  $self;
 }
 
 sub _do_action {
@@ -289,7 +292,7 @@ sub cast {
   my ($to, $obj) = @_;
   warn "Casting $obj (".(ref $obj).") to ".(ref $to || $to) if DEBUG;
   return $obj unless ref $obj;
-  return $obj if (ref $obj eq $to);
+  return $obj if (eval { $obj->isa(ref $to || $to) });
   unless (ref $to) {
     eval "use ${to};";
     Carp::croak $@ if $@;
@@ -427,7 +430,16 @@ array, and can take one to set all such child nodes at once.
 
 Creates a read-only accessor that returns the nodeset specified by evaluating
 the given XPath expression with the object as the context node, and returning
-the results as an array of Class::Name objects
+the results as an array of Class::Name objects.
+
+You can also specify an XPath expression with %s, %i etc. in it; the result
+will be run through an sprintf on the arguments to the accessor before being
+used - for example
+
+  __PACKAGE__->has_relation('find_person' =>
+                              [ '//person[@name="%s"]' => 'Person' ]);
+  ...
+  my @ret = $obj->find_person("Barry"); # Evaluates //person[@name="Barry"]
 
 =head2 Constructors
 
@@ -457,6 +469,15 @@ Creates a new instance of the appropriate class from scratch; 'name' if given
 will override the one stored in element_name, 'ns' is the namespace prefix for
 the element and 'opts' if given should be a hashref containing name => value
 pairs for the initial attributes and children of the object.
+
+=head2 Utility
+
+=head3 cast
+
+  Class::XML::cast($new_class, $obj);
+
+Loads the class specified by $new_class if necessary and then re-blesses $obj
+into it. Designed for internal use but may come in handy :)
 
 =head1 AUTHOR
 

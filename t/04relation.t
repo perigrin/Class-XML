@@ -5,7 +5,7 @@ use Test::More;
 use MyTest::TopNode;
 
 use strict;
-plan tests => 6;
+plan tests => 9;
 
 # Tests here
 
@@ -27,3 +27,13 @@ my $node = $res[0];
 isa_ok($node, 'MyTest::MultiChild', "Result is an object of correct class");
 
 is ("${node}", '<stalk beans="4" />', "Stringify ok");
+
+@res = $tree->n_beans(3);
+
+cmp_ok(@res, '==', 1, "One node returned");
+
+$node = $res[0];
+
+isa_ok($node, 'MyTest::MultiChild', "Result is an object of correct class");
+
+is ("${node}", '<stalk beans="3" />', "Stringify ok");

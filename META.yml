@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Class-XML
-version: 0.03
+version: 0.04
 author:
   - Matt S Trout <mstrout@cpan.org>
 abstract: Simple XML Abstraction
@@ -14,5 +14,5 @@ requires:
 provides:
   Class::XML:
     file: lib/Class/XML.pm
-    version: 0.03
+    version: 0.04
 generated_by: Module::Build version 0.25
