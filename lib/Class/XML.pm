@@ -1,6 +1,6 @@
 package Class::XML;
 
-$VERSION = "0.04";
+$VERSION = "0.05";
 
 use strict;
 use warnings;
@@ -300,6 +300,50 @@ sub cast {
   return bless($obj, ref $to || $to);
 }
 
+sub search_children {
+  my ($self) = @_;
+  my $xpath = $self->_gen_search_expr('/', @_[1..$#_]);
+  my @results = $self->findnodes($xpath);
+  NODE: foreach my $node (@results) {
+    next NODE unless $node->isElementNode;
+    my $name = $node->getName;
+    my $class;
+    GROUP: foreach my $group (qw/child children/) {
+      my $meth = "__${group}";
+      $class = $self->$meth()->{$name};
+      last GROUP if defined $class;
+    }
+    next NODE unless defined $class;
+    cast($class, $node);
+  }
+  return @results;
+}
+
+sub _gen_search_expr {
+  my ($self, $axis, $name, $attrs) = @_;
+  if (ref $name eq 'HASH') {
+    $attrs = $name;
+    undef $name;
+  }
+  $name ||= '*';
+  my $xpath = "${axis}${name}";
+  ATTRS: {
+    if ($attrs) {
+      my $count;
+      eval { $count = keys %{$attrs}; };
+      $self->_croak("Attributes for search_children must be a hashref!") if $@;
+      last ATTRS unless $count;
+      my @test;
+      while (my ($k, $v) = each %{$attrs}) {
+        $v =~ s/"/\"/g;
+        push(@test, qq!\@${k} = "${v}"!);
+      }
+      $xpath .= '['.join(' and ', @test).']';
+    }
+  }
+  return $xpath;
+}
+
 =head1 NAME
 
 Class::XML - Simple XML Abstraction
@@ -463,12 +507,25 @@ uses). Returns an object corresponding to the root node of the XML document.
 
 =head3 create
 
-  my $new = My::Class->create( name?, ns?, { opts }?)
+  my $new = My::Class->create( name?, ns?, { opts }? )
 
 Creates a new instance of the appropriate class from scratch; 'name' if given
 will override the one stored in element_name, 'ns' is the namespace prefix for
 the element and 'opts' if given should be a hashref containing name => value
 pairs for the initial attributes and children of the object.
+
+=head2 Searching
+
+=head3 search_children
+
+  my @res = $obj->search_children( name?, { attr => value, ... }? )
+
+Searches the immediate children of the object for nodes of name 'name' (or
+any name if not given) with attribute-value pairs matching the supplied hash
+reference (or all nodes matching the name test if not given). Any child for
+whose name a has_child or has_children relationship has been declared will be
+returned as an object of the appropriate class; any other node will be returned
+as a vanilla XML::XPath::Node::Element object.
 
 =head2 Utility
 

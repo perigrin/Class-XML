@@ -18,3 +18,4 @@ t/02new.t
 t/03children.t
 t/04relation.t
 t/05inherit.t
+t/06search.t
